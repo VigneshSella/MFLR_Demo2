@@ -1,6 +1,10 @@
 # MFLR_Demo2
 
-Command to run:
+In one terminal run:
 ```
-'C:\Program Files\ParaView 5.12.0\bin\pvpython.exe' .\main.py --venv .venv
+(.venv) PS C:\Users\Vignesh\Documents\GitHub\MFLR_Demo2> & 'C:\Program Files\ParaView 5.12.0\bin\pvpython.exe' .\main.py --venv .venv
+```
+In second terminal run:
+```
+(.flaskvenv) PS C:\Users\Vignesh\Documents\GitHub\MFLR_Demo2> python app.py
 ```
