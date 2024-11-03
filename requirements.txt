@@ -1,4 +1,6 @@
 trame
 trame-vuetify
 trame-vtk
+# joblib
+# scitkit-learn
 # vtk

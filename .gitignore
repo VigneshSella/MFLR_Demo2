@@ -1,1 +1,6 @@
 .venv
+.flaskvenv
+# everything inside of .venv and .flaskvenv
+.venv/*
+.flaskvenv/*
+__pycache__
