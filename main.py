@@ -6,9 +6,12 @@ from vtkmodules.util.numpy_support import vtk_to_numpy
 from paraview.servermanager import Fetch
 from pathlib import Path
 from trame.app import get_server
-from trame.widgets import vuetify, paraview
+from trame.widgets import vuetify, paraview, client
 from trame.ui.vuetify import SinglePageLayout
 import requests  # Add this import
+
+# Default view
+DEFAULT_VEHICLE = "example.dat" # r"render_data\MF_prediction.dat"
 
 # -----------------------------------------------------------------------------
 # Trame setup
@@ -47,10 +50,20 @@ def setup_visualization(data_file):
     # Delete previous data source if it exists
     if current_reader:
         simple.Delete(current_reader)
+    current_reader = None
+
+    # Force a pipeline reset to ensure no cache issues
+    simple.Disconnect()  # Disconnect and reconnect to reset state
+    simple.Connect()    
 
     # Load data file
     data_path = Path(data_file).resolve().absolute()
-    reader = simple.OpenDataFile(str(data_path))
+    try:
+        reader = simple.OpenDataFile(str(data_path))
+    except Exception as e:
+        print(f"ERROR: Failed to load data file: {e}")
+        return
+    # reader = simple.OpenDataFile(str(data_path))
     reader.UpdatePipeline()
     current_reader = reader
 
@@ -99,13 +112,6 @@ def setup_visualization(data_file):
 
     simple.LoadState("example.pvsm")  # Load state file for additional settings
 
-    # # Force the color bar to update with the rescaled range
-    # color_bar = simple.GetScalarBar(color_map, simple.GetActiveView())
-    # color_bar.Title = "Pressure (Pa)"
-    # color_bar.ComponentTitle = ""
-    # color_bar.Visibility = 1
-    # simple.GetActiveView().Update()  # Update the view to apply all settings
-
     # Reset the camera to ensure full view and render the scene
     view = simple.GetActiveViewOrCreate("RenderView")
     view.ResetCamera()
@@ -114,6 +120,7 @@ def setup_visualization(data_file):
     simple.Render(view)
 
 def on_compute(**kwargs):
+    print("Called on_compute")
     global current_reader
     # Get user inputs
     mach = float(state.mach_number)
@@ -130,15 +137,20 @@ def on_compute(**kwargs):
     }
     response = requests.post('http://127.0.0.1:5000/compute', json=payload)
     result = response.json()
+    print(f"Received response: {result}")
 
     if result['status'] == 'success':
         output_file = result['output_file']
+        print(f"Computation successful. Output file: {output_file}")
 
         # Update visualization with new data
+        # load_data(data=output_file)
         setup_visualization(output_file)
 
         # Refresh the view
+        ctrl.view_reset_camera()
         ctrl.view_update()
+        state.flush()
     else:
         print("ERROR: Computation failed.")
 
@@ -146,7 +158,7 @@ ctrl.on_compute = on_compute
 
 def load_data(**kwargs):
     args, _ = server.cli.parse_known_args()
-    data_file = args.data or "example.dat"
+    data_file = args.data or DEFAULT_VEHICLE
 
     # Set up visualization with initial data
     setup_visualization(data_file)
@@ -159,11 +171,14 @@ def load_data(**kwargs):
         with layout.content:
             with vuetify.VContainer(fluid=True, classes="pa-0 fill-height"):
                 with vuetify.VRow(classes="fill-height", justify="space-between"):
-                    # Left column for inputs
-                    with vuetify.VCol(cols="3"):
+                    # First column is just empty space:
+                    with vuetify.VCol(cols="1", classes="pl-3"):
+                        pass
+                    # Left column for inputs with left padding
+                    with vuetify.VCol(cols="1", classes="pl-3"):  # Add padding-left here
                         vuetify.VTextField(
                             v_model=("mach_number", 5.0),
-                            label="Mach Number",
+                            label="Mach Number (5-7)",
                             type="number",
                             step=0.1,
                         )
@@ -190,10 +205,24 @@ def load_data(**kwargs):
                         html_view = paraview.VtkRemoteView(view, style="flex: 1; height: 100%;")
                         ctrl.view_reset_camera = html_view.reset_camera
                         ctrl.view_update = html_view.update
-
+                    # Last column is just empty space:
+                    with vuetify.VCol(cols="1"):
+                        pass
 
 ctrl.on_server_ready.add(load_data)
+# -----------------------------------------------------------------------------
+# GUI
+# -----------------------------------------------------------------------------
 
+state.trame__title = "Hypersonic Vehicle Pressure Viewer"
+
+with SinglePageLayout(server) as layout:
+    layout.icon.click = ctrl.view_reset_camera
+    layout.title.set_text("Hypersonic Vehicle Pressure Viewer")
+
+    with layout.content:
+        with vuetify.VContainer(fluid=True, classes="pa-0 fill-height"):
+            client.Loading("Loading data")
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
