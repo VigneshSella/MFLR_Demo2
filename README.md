@@ -1,4 +1,4 @@
-# MFLR_Demo2
+# Multifidelity Linear Regression Demo 2
 This repository contains the code for the MFLR_Demo2 web application. The app is a demonstration of the multi-fidelity linear regression methods presented in this [work](https://arc.aiaa.org/doi/abs/10.2514/6.2023-0916). Due to the fast inference capability of the underlying linear regression based methodologies, we can enable live visualizations of the surface pressure field upon a hypersonic vehicle. When a user changes the parameters, the surface pressure field is updated live, and the rendering reflects the changes. One can change between the multi-fidelity (multi-step) and single-fidelity methods to see the differences based on flight conditions.
 
 ## MFLR_Demo2 Web App Setup Guide
@@ -19,7 +19,7 @@ This guide provides instructions to set up and run the **MFLR_Demo2** web applic
 
 Clone this repository to your local machine:
 ```bash
-git clone <repository_url>
+git clone https://github.com/VigneshSella/MFLR_Demo2
 cd MFLR_Demo2
 ```
 
